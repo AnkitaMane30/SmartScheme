@@ -1,0 +1,139 @@
+.home-page {
+  background: #f8f9fc;
+}
+
+.scheme-card img {
+  height: 220px;
+  object-fit: cover;
+}
+
+.scheme-card {
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+  transition: 0.3s;
+}
+
+.scheme-card:hover {
+  transform: translateY(-5px);
+}
+
+.find-section {
+  background: #eef4ff;
+}
+
+.category-card {
+  background: white;
+  border-radius: 15px;
+  transition: 0.3s;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+}
+
+.stats-section {
+  background: white;
+}
+
+.footer-section {
+  background: #0f172a;
+}
+
+.footer-section p {
+  color: #d1d5db;
+}
+
+.scheme-scroll-container {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding-bottom: 10px;
+}
+
+.scheme-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scheme-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.scheme-scroll-card {
+  min-width: 300px;
+  max-width: 300px;
+  border-radius: 15px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: none;
+  transition: 0.3s;
+}
+
+.scheme-scroll-card:hover {
+  transform: translateY(-5px);
+}
+
+.scheme-scroll-card img {
+  height: 220px;
+  object-fit: cover;
+}
+
+.scheme-card {
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: 0.3s;
+}
+
+.scheme-card:hover {
+  transform: translateY(-6px);
+}
+
+.scheme-card img {
+  height: 220px;
+  object-fit: cover;
+}
+
+.category-card {
+  background: white;
+  border-radius: 18px;
+  transition: 0.3s;
+  border: none;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+}
+
+.category-icon {
+  font-size: 40px;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  background-color: rgba(0,0,0,0.5);
+  border-radius: 50%;
+  padding: 18px;
+}
+.scheme-main-card {
+  border-radius: 20px;
+  overflow: hidden;
+  background: white;
+}
+
+.scheme-big-image {
+  height: 450px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+  color: #0d6efd;
+}
+
+.swiper-pagination-bullet-active {
+  background: #0d6efd;
+}

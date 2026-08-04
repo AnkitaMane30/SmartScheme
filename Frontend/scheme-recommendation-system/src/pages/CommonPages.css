@@ -1,0 +1,82 @@
+.page-wrapper{
+    background: #f7f9fc;
+    min-height: 100vh;
+    padding: 30px;
+}
+
+.top-banner{
+    background: #eef4ff;
+    border-radius: 20px;
+    padding: 50px;
+    margin-bottom: 30px;
+}
+
+.top-banner h1{
+    font-weight: 700;
+    color: #111827;
+}
+
+.top-banner span{
+    color: #2563eb;
+}
+
+.section-card{
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    margin-bottom: 25px;
+}
+
+.small-box{
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.04);
+    height: 100%;
+}
+
+.scheme-card{
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.blue-btn{
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 10px;
+}
+
+.blue-btn:hover{
+    background: #1d4ed8;
+}
+
+.filter-box{
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.05);
+}
+
+.icon-circle{
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:30px;
+    margin:auto;
+    margin-bottom:15px;
+}
+
+.icon-blue{ background:#e8f0ff; color:#2563eb; }
+.icon-green{ background:#e9f8ee; color:#16a34a; }
+.icon-purple{ background:#f1ebff; color:#7c3aed; }
+.icon-yellow{ background:#fff7e6; color:#d97706; }
+.icon-pink{ background:#ffe9ef; color:#db2777; }
