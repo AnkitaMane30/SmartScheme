@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { loginUser, getProfile } from "../services/userServices";
+import { loginUser, getUserInfo } from "../services/userServices";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -9,38 +9,59 @@ export default function Login() {
   const navigate = useNavigate();
 
   const login = async () => {
-    if (!email || !password) {
-      return toast.warn("Enter all fields");
-    }
+  if (!email || !password) {
+    return toast.warn("Enter all fields");
+  }
 
+  try {
     const result = await loginUser(email, password);
 
-    if (result.error) {
-      return toast.error(result.error);
+    console.log("LOGIN RESPONSE:", result);
+
+    if (!result?.data?.token) {
+      console.error("TOKEN NOT FOUND:", result);
+      return toast.error("Login failed: token not received");
     }
 
-    // SAVE TOKEN
+    // SAVE TOKEN FIRST
     localStorage.setItem("token", result.data.token);
 
-    // FETCH PROFILE AFTER LOGIN
-    const profileRes = await getProfile();
+    console.log(
+      "TOKEN SAVED:",
+      localStorage.getItem("token")
+    );
 
-    if (profileRes.error) {
-      return toast.error(profileRes.error);
+    // FETCH COMPLETE USER INFO
+    const profileRes = await getUserInfo();
+
+    console.log("USER INFO AFTER LOGIN:", profileRes);
+
+    if (!profileRes?.data) {
+      return toast.error("Failed to load user profile");
     }
 
-    // SAVE USER DATA
-    localStorage.setItem("user", JSON.stringify(profileRes.data));
+    // SAVE USER
+    localStorage.setItem(
+      "user",
+      JSON.stringify(profileRes.data)
+    );
 
-    // UPDATE NAVBAR IMMEDIATELY
-    window.dispatchEvent(new Event("userUpdated"));
+    // TELL NAVBAR TO UPDATE
+    window.dispatchEvent(
+      new Event("userUpdated")
+    );
 
     toast.success("Login successful");
 
-    // ALWAYS GO HOME PAGE AFTER LOGIN
     navigate("/");
-  };
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
 
+    toast.error(
+      error.message || "Login failed"
+    );
+  }
+};
   return (
     <div className="container w-50 mt-5">
       <div className="card shadow p-4">

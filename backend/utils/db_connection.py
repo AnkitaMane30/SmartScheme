@@ -5,7 +5,7 @@ def getDBConnection():
         host = "localhost",
         port = 3306,
         user = "root",
-        password ="root",
+        password ="manager",
         database= "smartscheme",
         use_pure=True
     )

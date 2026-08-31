@@ -2,21 +2,22 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
 import Schemes from "./pages/Schemes";
 import About from "./pages/About";
 import FindSchemes from "./pages/FindSchemes";
 import SchemeDetails from "./pages/SchemeDetails";
+import RecommendationStart from "./pages/RecommendationStart";
+import UpdateProfile from "./pages/UpdateProfile";
 
 function App() {
-  
+
   return (
     <BrowserRouter>
+
       <Navbar />
 
       <ToastContainer
@@ -30,17 +31,62 @@ function App() {
       />
 
       <Routes>
-        <Route path="/" element={<Home />} />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/schemes" element={<Schemes />} />
-        <Route path="/schemes/:id" element={<SchemeDetails />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/findscheme" element={<FindSchemes />}/>
-        
+        {/* ================= HOME ================= */}
+        <Route
+          path="/"
+          element={<Home />}
+        />
+
+        {/* ================= AUTH ================= */}
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
+        {/* ================= RECOMMENDATION FLOW ================= */}
+
+        <Route
+          path="/recommendation-start"
+          element={<RecommendationStart />}
+        />
+
+        <Route
+          path="/findscheme"
+          element={<FindSchemes />}
+        />
+
+        <Route
+          path="/update-profile"
+          element={<UpdateProfile />}
+        />
+
+        {/* ================= SCHEMES ================= */}
+
+        <Route
+          path="/schemes"
+          element={<Schemes />}
+        />
+
+        <Route
+          path="/schemes/:id"
+          element={<SchemeDetails />}
+        />
+
+        {/* ================= ABOUT ================= */}
+
+        <Route
+          path="/about"
+          element={<About />}
+        />
+
       </Routes>
+
     </BrowserRouter>
   );
 }
