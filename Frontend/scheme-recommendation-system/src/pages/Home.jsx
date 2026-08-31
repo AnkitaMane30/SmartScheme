@@ -163,7 +163,7 @@ export default function Home() {
 
               <button
                 className="btn btn-primary mt-3"
-                onClick={() => navigate("/findscheme")}
+                onClick={() => navigate("/recommendation-start")}
               >
                 Start Recommendation
               </button>

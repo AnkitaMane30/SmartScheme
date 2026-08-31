@@ -1,109 +1,347 @@
 import { useEffect, useState, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { getProfile } from "../services/userServices";
+import {
+  Link,
+  useNavigate,
+  useLocation
+} from "react-router-dom";
+
+import { getUserInfo } from "../services/userServices";
 
 export default function Navbar() {
+
   const navigate = useNavigate();
   const location = useLocation();
 
-  const token = localStorage.getItem("token");
-
-  // ✅ SAFE LOCALSTORAGE PARSE (FIX FOR "undefined")
-  const storedUser = localStorage.getItem("user");
-
-  const [user, setUser] = useState(
-    storedUser && storedUser !== "undefined"
-      ? JSON.parse(storedUser)
-      : null
-  );
-
+  const [user, setUser] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
-  const profileRef = useRef();
 
-  // ================= FETCH PROFILE =================
-  useEffect(() => {
-    if (!token) {
+  const profileRef = useRef(null);
+
+  // ============================================================
+  // LOAD USER FROM LOCAL STORAGE
+  // ============================================================
+
+  const loadStoredUser = () => {
+
+    const storedUser =
+      localStorage.getItem("user");
+
+    if (
+      storedUser &&
+      storedUser !== "undefined" &&
+      storedUser !== "null"
+    ) {
+
+      try {
+
+        return JSON.parse(storedUser);
+
+      } catch (error) {
+
+        console.error(
+          "INVALID USER DATA IN LOCAL STORAGE:",
+          error
+        );
+
+        localStorage.removeItem("user");
+
+        return null;
+      }
+    }
+
+    return null;
+  };
+
+  // ============================================================
+  // FETCH LATEST USER FROM BACKEND
+  // ============================================================
+
+  const fetchUser = async () => {
+
+    const token =
+      localStorage.getItem("token");
+
+    // ----------------------------------------------------------
+    // NO TOKEN
+    // ----------------------------------------------------------
+
+    if (
+      !token ||
+      token === "undefined" ||
+      token === "null"
+    ) {
+
       setUser(null);
+
       return;
     }
 
-    getProfile()
-      .then((res) => {
-        if (!res.error && res.data) {
-          setUser(res.data);
-          localStorage.setItem(
-            "user",
-            JSON.stringify(res.data)
-          );
-        }
-      })
-      .catch((err) => console.log(err));
-  }, [token]);
+    // ----------------------------------------------------------
+    // GET USER
+    // ----------------------------------------------------------
 
-  // ================= USER UPDATE EVENT =================
-  useEffect(() => {
-    const updateUser = () => {
-      const updated = localStorage.getItem("user");
+    try {
 
-      if (updated && updated !== "undefined") {
-        setUser(JSON.parse(updated));
+      const result =
+        await getUserInfo();
+
+      console.log(
+        "NAVBAR USER INFO:",
+        result
+      );
+
+      if (
+        result?.status === "success" &&
+        result?.data
+      ) {
+
+        // ======================================================
+        // UPDATE REACT STATE
+        // ======================================================
+
+        setUser(result.data);
+
+        // ======================================================
+        // UPDATE LOCAL STORAGE
+        // ======================================================
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(result.data)
+        );
+
       } else {
-        setUser(null);
+
+        console.error(
+          "INVALID USER INFO RESPONSE:",
+          result
+        );
+
       }
+
+    } catch (error) {
+
+      console.error(
+        "NAVBAR PROFILE ERROR:",
+        error
+      );
+
+      // --------------------------------------------------------
+      // DO NOT LOG USER OUT JUST BECAUSE API FAILED
+      // --------------------------------------------------------
+
+      const storedUser =
+        loadStoredUser();
+
+      if (storedUser) {
+
+        setUser(storedUser);
+
+      }
+
+    }
+  };
+
+  // ============================================================
+  // INITIAL LOAD
+  // ============================================================
+
+  useEffect(() => {
+
+    const storedUser =
+      loadStoredUser();
+
+    if (storedUser) {
+
+      setUser(storedUser);
+
+    }
+
+    fetchUser();
+
+  }, []);
+
+  // ============================================================
+  // USER UPDATED EVENT
+  // ============================================================
+  //
+  // UpdateProfile will dispatch:
+  //
+  // window.dispatchEvent(
+  //   new CustomEvent("userUpdated", {
+  //     detail: latestUser
+  //   })
+  // );
+  //
+  // Navbar receives the updated user here.
+  // ============================================================
+
+  useEffect(() => {
+
+    const handleUserUpdated = (event) => {
+
+      console.log(
+        "USER UPDATED EVENT RECEIVED BY NAVBAR:",
+        event
+      );
+
+      // ========================================================
+      // GET UPDATED USER FROM EVENT
+      // ========================================================
+
+      const updatedUser =
+        event?.detail;
+
+      if (
+        updatedUser &&
+        typeof updatedUser === "object"
+      ) {
+
+        console.log(
+          "INSTANT UPDATED USER:",
+          updatedUser
+        );
+
+        // ======================================================
+        // UPDATE NAVBAR STATE IMMEDIATELY
+        // ======================================================
+
+        setUser(updatedUser);
+
+        // ======================================================
+        // UPDATE LOCAL STORAGE
+        // ======================================================
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(updatedUser)
+        );
+
+      } else {
+
+        // ======================================================
+        // FALLBACK
+        // If no event.detail is provided, fetch from backend.
+        // ======================================================
+
+        console.log(
+          "NO UPDATED USER DATA IN EVENT."
+        );
+
+        fetchUser();
+
+      }
+
     };
 
-    window.addEventListener("userUpdated", updateUser);
+    window.addEventListener(
+      "userUpdated",
+      handleUserUpdated
+    );
 
     return () => {
-      window.removeEventListener("userUpdated", updateUser);
+
+      window.removeEventListener(
+        "userUpdated",
+        handleUserUpdated
+      );
+
     };
+
   }, []);
 
-  // ================= OUTSIDE CLICK CLOSE =================
+  // ============================================================
+  // CLOSE PROFILE WHEN CLICKING OUTSIDE
+  // ============================================================
+
   useEffect(() => {
-    const handleClick = (e) => {
+
+    const handleClickOutside = (event) => {
+
       if (
         profileRef.current &&
-        !profileRef.current.contains(e.target)
+        !profileRef.current.contains(
+          event.target
+        )
       ) {
+
         setShowProfile(false);
+
       }
+
     };
 
-    document.addEventListener("mousedown", handleClick);
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
 
-    return () =>
-      document.removeEventListener("mousedown", handleClick);
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+
+    };
+
   }, []);
 
-  // ================= CLOSE ON ROUTE CHANGE =================
+  // ============================================================
+  // CLOSE PROFILE ON ROUTE CHANGE
+  // ============================================================
+
   useEffect(() => {
+
     setShowProfile(false);
+
   }, [location.pathname]);
 
-  // ================= LOGOUT =================
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
   const logout = () => {
+
     localStorage.removeItem("token");
+
     localStorage.removeItem("user");
 
     setUser(null);
+
     setShowProfile(false);
 
     navigate("/");
+
   };
 
+  // ============================================================
+  // RETURN UI
+  // ============================================================
+
   return (
+
     <nav className="navbar navbar-dark bg-dark px-4 py-2">
 
-      {/* LEFT */}
+      {/* ======================================================
+          LEFT SIDE
+      ====================================================== */}
+
       <div className="d-flex align-items-center gap-4">
 
-        <Link to="/" className="navbar-brand fw-bold">
+        {/* LOGO */}
+
+        <Link
+          to="/"
+          className="navbar-brand fw-bold"
+        >
           SmartScheme
         </Link>
 
-        {/* PUBLIC LINKS */}
+        {/* NAVIGATION */}
+
         <div className="d-flex gap-3">
+
           <Link
             to="/schemes"
             className="btn btn-outline-light btn-sm"
@@ -117,86 +355,217 @@ export default function Navbar() {
           >
             About
           </Link>
+
         </div>
+
       </div>
 
-      {/* RIGHT */}
+      {/* ======================================================
+          RIGHT SIDE
+      ====================================================== */}
+
       <div className="d-flex align-items-center gap-3 ms-auto">
 
-       
-        {!token && (
+        {/* ====================================================
+            LOGIN BUTTON
+        ==================================================== */}
+
+        {!user && (
+
           <button
             className="btn btn-primary"
-            onClick={() => navigate("/login")}
+            onClick={() =>
+              navigate("/login")
+            }
           >
             Login
           </button>
+
         )}
 
-        {token && (
+        {/* ====================================================
+            LOGGED-IN USER
+        ==================================================== */}
+
+        {user && (
+
           <>
-            <span className="text-white medium">
-              {user?.email}
+
+            {/* ==================================================
+                EMAIL
+            ================================================== */}
+
+            <span className="text-white">
+              {user?.email || "-"}
             </span>
+
+            {/* ==================================================
+                PROFILE CONTAINER
+            ================================================== */}
 
             <div
               className="position-relative"
               ref={profileRef}
             >
-              {/* <button
+
+              {/* PROFILE BUTTON */}
+
+              <button
                 className="btn btn-outline-light"
-                onClick={() => setShowProfile(!showProfile)}
+                onClick={() =>
+                  setShowProfile(
+                    (previous) =>
+                      !previous
+                  )
+                }
                 style={{
                   width: "45px",
                   height: "45px",
+                  borderRadius: "50%"
                 }}
               >
-              👤
-              </button> */}
+                👤
+              </button>
 
-              {/* {showProfile && (
+              {/* =================================================
+                  PROFILE DROPDOWN
+              ================================================= */}
+
+              {showProfile && (
+
                 <div
                   className="card position-absolute end-0 mt-2 shadow p-3"
                   style={{
-                    width: "280px",
-                    zIndex: 1000,
+                    width: "300px",
+                    zIndex: 1000
                   }}
                 >
+
+                  {/* =============================================
+                      PROFILE HEADER
+                  ============================================= */}
+
                   <div className="text-center mb-3">
+
                     <div
                       className="mx-auto mb-2 bg-primary text-white d-flex align-items-center justify-content-center"
                       style={{
                         width: "60px",
                         height: "60px",
                         borderRadius: "50%",
-                        fontSize: "24px",
+                        fontSize: "24px"
                       }}
                     >
-                      {user?.name?.charAt(0)}
+
+                      {user?.name
+                        ?.charAt(0)
+                        ?.toUpperCase() || "U"}
+
                     </div>
 
-                    <h6 className="mb-0">{user?.name}</h6>
+                    <h6 className="mb-0">
+
+                      {user?.name || "-"}
+
+                    </h6>
+
                     <small className="text-muted">
-                      {user?.email}
+
+                      {user?.email || "-"}
+
                     </small>
+
                   </div>
 
                   <hr />
 
-                  <small><b>Gender:</b> {user?.gender || "-"}</small><br />
-                  <small><b>Category:</b> {user?.category || "-"}</small><br />
-                  <small><b>Occupation:</b> {user?.occupation || "-"}</small><br />
-                  <small><b>Education:</b> {user?.education_level || "-"}</small><br />
-                  <small><b>Age:</b> {user?.age || "-"}</small><br />
-                  <small><b>Income:</b> {user?.income || "-"}</small><br />
-                  <small><b>State:</b> {user?.state || "-"}</small>
+                  {/* =============================================
+                      PROFILE INFORMATION
+                  ============================================= */}
+
+                  <small>
+                    <b>Gender:</b>{" "}
+                    {user?.gender || "-"}
+                  </small>
+
+                  <br />
+
+                  <small>
+                    <b>Category:</b>{" "}
+                    {user?.caste_category || "-"}
+                  </small>
+
+                  <br />
+
+                  <small>
+                    <b>Occupation:</b>{" "}
+                    {user?.occupation || "-"}
+                  </small>
+
+                  <br />
+
+                  <small>
+                    <b>Education:</b>{" "}
+                    {user?.education_level || "-"}
+                  </small>
+
+                  <br />
+
+                  <small>
+                    <b>Age:</b>{" "}
+                    {user?.age ?? "-"}
+                  </small>
+
+                  <br />
+
+                  <small>
+                    <b>Income:</b>{" "}
+                    {user?.annual_income ?? "-"}
+                  </small>
+
+                  <br />
+
+                  <small>
+                    <b>State:</b>{" "}
+                    {user?.state || "-"}
+                  </small>
+
+                  <br />
+
+                  <small>
+                    <b>District:</b>{" "}
+                    {user?.district || "-"}
+                  </small>
+
+                  <br />
+
+                  <small>
+                    <b>Marital Status:</b>{" "}
+                    {user?.marital_status || "-"}
+                  </small>
+
+                  {/* =============================================
+                      UPDATE PROFILE
+                  ============================================= */}
 
                   <button
                     className="btn btn-outline-primary w-100 mt-3"
-                    onClick={() => navigate("/dashboard")}
+                    onClick={() => {
+
+                      setShowProfile(false);
+
+                      navigate(
+                        "/update-profile"
+                      );
+
+                    }}
                   >
                     Update Profile
-                  </button> */}
+                  </button>
+
+                  {/* =============================================
+                      LOGOUT
+                  ============================================= */}
 
                   <button
                     className="btn btn-danger w-100 mt-2"
@@ -204,12 +573,20 @@ export default function Navbar() {
                   >
                     Logout
                   </button>
+
                 </div>
-              {/* )}
-            </div> */}
+
+              )}
+
+            </div>
+
           </>
+
         )}
+
       </div>
+
     </nav>
+
   );
 }
