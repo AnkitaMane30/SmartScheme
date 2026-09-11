@@ -58,7 +58,7 @@ def print_schemes(limit=10):
 if __name__ == "__main__":
     # -------- Choose what to run --------
     # 1. Run everything
-    run_pipeline()
+    #run_pipeline()
 
     # 2. Run only one domain (recommended while testing)
     #run_pipeline(WATER_URLS)          
@@ -73,5 +73,5 @@ if __name__ == "__main__":
     
 
     # 3. Just view current data
-    #print_schemes(limit=30)
+    print_schemes(limit=30)
     #print_schemes()
