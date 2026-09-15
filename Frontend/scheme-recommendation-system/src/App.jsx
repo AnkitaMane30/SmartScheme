@@ -12,6 +12,7 @@ import FindSchemes from "./pages/FindSchemes";
 import SchemeDetails from "./pages/SchemeDetails";
 import RecommendationStart from "./pages/RecommendationStart";
 import UpdateProfile from "./pages/UpdateProfile";
+import Recommendations from "./pages/Recommendations";
 
 function App() {
 
@@ -84,6 +85,8 @@ function App() {
           path="/about"
           element={<About />}
         />
+
+        <Route path="/recommendations" element={<Recommendations />} />
 
       </Routes>
 

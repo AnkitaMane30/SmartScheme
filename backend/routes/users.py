@@ -1168,3 +1168,88 @@ def profile_status():
         return createResult(
             "Failed to check profile status"
         )
+
+
+# ============================================================
+# SMART RECOMMENDATIONS
+# ============================================================
+
+@usersRouter.route("/recommendations", methods=["GET"])
+@jwt_required()
+def get_recommendations():
+
+    try:
+        email = get_jwt_identity()
+
+        # 1. Load full user profile from DB
+        sql = """
+            SELECT
+                age, gender, state, district, marital_status,
+                disability_status, annual_income, is_bpl,
+                rural_urban, caste_category, occupation,
+                education_level, course, land_owner, land_holding,
+                home_based_business, business_interest, skills,
+                profile_completed
+            FROM users
+            WHERE email = %s
+        """
+        result = db.executeQuery(sql, (email,))
+
+        if not result:
+            return createResult("User not found")
+
+        user = result[0]
+        user = convert_boolean_fields(user)
+
+        if not user.get("profile_completed"):
+            return createResult(
+                "Please complete your profile first to get recommendations"
+            )
+
+        # 2. Build profile for SmartRecommendation
+        profile = {
+            "age": user.get("age"),
+            "gender": user.get("gender"),
+            "state": user.get("state") or "Maharashtra",
+            "district": user.get("district"),
+            "annual_income": float(user.get("annual_income") or 0),
+            "caste_category": user.get("caste_category") or "General",
+            "occupation": user.get("occupation"),
+            "education_level": user.get("education_level"),
+            "course": user.get("course"),
+            "disability_status": bool(user.get("disability_status")),
+            "is_bpl": bool(user.get("is_bpl")),
+            "land_owner": bool(user.get("land_owner")),
+            "land_holding": float(user.get("land_holding") or 0),
+            "marital_status": user.get("marital_status"),
+            "home_based_business": bool(user.get("home_based_business")),
+            "business_interest": bool(user.get("business_interest")),
+            "skills": user.get("skills"),
+        }
+
+        # 3. Call Smart Recommendation Engine
+        from services.smart_recommendation import SmartRecommendation
+        engine = SmartRecommendation()
+        recommendation_result = engine.recommend(profile, top_n=10)
+
+        # 4. Return response
+        return createResult(None, {
+            "total_schemes": recommendation_result.get("total_schemes"),
+            "eligible_count": recommendation_result.get("eligible_count"),
+            "needs_verification_count": recommendation_result.get("needs_verification_count"),
+            "not_eligible_count": recommendation_result.get("not_eligible_count"),
+            "recommendations": recommendation_result.get("recommendations", [])
+        })
+
+    except Exception as e:
+        print("RECOMMENDATIONS ERROR:", e)
+        import traceback
+        traceback.print_exc()
+        return createResult(f"Failed to generate recommendations: {str(e)}")
+
+
+
+
+
+
+    
