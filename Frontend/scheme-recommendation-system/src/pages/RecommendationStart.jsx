@@ -207,7 +207,7 @@ function RecommendationStart() {
             <button
               style={styles.secondaryButton}
               onClick={() =>
-                navigate("/schemes")
+                navigate("/recommendations")
               }
             >
               View Recommendations

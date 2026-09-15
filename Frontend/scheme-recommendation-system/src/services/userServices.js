@@ -240,3 +240,40 @@ export async function getProfileStatus() {
 
   return result;
 }
+
+// =====================================================
+// GET SMART RECOMMENDATIONS
+// =====================================================
+
+export async function getRecommendations() {
+  const token = localStorage.getItem("token");
+
+  if (!token || token === "undefined" || token === "null") {
+    throw new Error("User is not logged in");
+  }
+
+  const response = await fetch(
+    `${BASE_URL}/recommendations`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+
+  console.log("RECOMMENDATIONS RESPONSE:", result);
+
+  if (!response.ok || result.status === "error") {
+    throw new Error(
+      result?.error ||
+      result?.message ||
+      "Failed to fetch recommendations"
+    );
+  }
+
+  return result;
+}
