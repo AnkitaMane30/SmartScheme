@@ -14,7 +14,7 @@ export default function SchemeDetails() {
   // =====================================================
 
   useEffect(() => {
-    loadScheme();
+    loadScheme(); 
   }, [id]);
 
   const loadScheme = async () => {
@@ -671,12 +671,12 @@ export default function SchemeDetails() {
 
             {/* Action Buttons */}
             <div className="mb-4">
-              <button
+              {/* <button
                 className="btn btn-outline-primary me-3"
                 onClick={() => document.getElementById("eligibility")?.scrollIntoView({ behavior: "smooth" })}
               >
                 Check Eligibility
-              </button>
+              </button> */}
               {hasValue(scheme.application_link) && (
                 <a
                   href={scheme.application_link}

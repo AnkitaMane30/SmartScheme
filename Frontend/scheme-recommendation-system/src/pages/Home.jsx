@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Home.css";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -12,140 +13,200 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
+// -----------------------------------------------------------------
+// Point this at your Flask backend. Adjust the port if yours differs
+// (e.g. if Flask runs on 5000 this is correct; change if needed).
+// -----------------------------------------------------------------
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+// Stock photos used as carousel backgrounds since the `schemes` table
+// has no image column - cycled through by index, not tied to content.
+const CAROUSEL_IMAGES = [
+  "https://images.unsplash.com/photo-1509099836639-18ba1795216d?q=80&w=1200",
+  "https://images.pexels.com/photos/1454360/pexels-photo-1454360.jpeg",
+  "https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?q=80&w=1200",
+];
+
+const CAROUSEL_BADGE_COLORS = ["bg-success", "bg-primary", "bg-danger"];
+
+// Keyword -> emoji lookup for whatever category strings actually exist
+// in the database (these differ per scraped source, e.g. "Agriculture
+// Credit", "Water & Sanitation" etc.) - falls back to a generic icon
+// for anything unrecognized instead of breaking the layout.
+const CATEGORY_ICON_RULES = [
+  [/bank|finance|credit/i, "🏦"],
+  [/business|industry|enterprise|startup/i, "🚀"],
+  [/agricult|farm|crop|dairy|animal husbandry/i, "🌾"],
+  [/educat|scholarship|student/i, "🎓"],
+  [/health|wellness|medical|hospital/i, "❤️"],
+  [/women|child|maternity/i, "👩"],
+  [/hous(e|ing)|shelter/i, "🏠"],
+  [/employ|job|labour|labor|skill/i, "🧑‍💼"],
+  [/disab|differently.?abled/i, "♿"],
+  [/senior|elder|old age/i, "👴"],
+  [/water|sanitation|irrigation/i, "💧"],
+  [/social|welfare|caste|tribal/i, "🤝"],
+  [/pension|insurance/i, "🛡️"],
+];
+
+const getCategoryIcon = (categoryName) => {
+  const match = CATEGORY_ICON_RULES.find(([regex]) => regex.test(categoryName || ""));
+  return match ? match[1] : "📋";
+};
+
+// Light text cleanup for the carousel description only - strips an
+// embedded "Date : ..." line if present and truncates to a teaser.
+const buildTeaser = (rawDetails, maxLength = 150) => {
+  if (!rawDetails) return "";
+  let text = rawDetails
+    .toString()
+    .replace(/Date\s*:\s*\d{2}\/\d{2}\/\d{4}\s*-\s*(?:\d{2}\/\d{2}\/\d{4})?/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength).trim() + "…";
+};
+
+// Fetch helper: unwraps the backend's { message, data } response shape
+// (falls back to the raw payload if the shape differs).
+const fetchJson = async (url) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  const json = await res.json();
+  return json && json.data !== undefined ? json.data : json;
+};
+
 export default function Home() {
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
+
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const [featuredSchemes, setFeaturedSchemes] = useState([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+
+  useEffect(() => {
+    loadCategories();
+    loadStats();
+    loadFeaturedSchemes();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const data = await fetchJson(`${API_BASE}/schemes/categories`);
+      setCategories(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      setStatsLoading(true);
+      const data = await fetchJson(`${API_BASE}/schemes/stats`);
+      setStats(data);
+    } catch (error) {
+      console.error("Error loading stats:", error);
+      setStats(null);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  const loadFeaturedSchemes = async () => {
+    try {
+      setFeaturedLoading(true);
+      const data = await fetchJson(`${API_BASE}/schemes/featured?limit=3`);
+      setFeaturedSchemes(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error loading featured schemes:", error);
+      setFeaturedSchemes([]);
+    } finally {
+      setFeaturedLoading(false);
+    }
+  };
 
   return (
     <div className="home-page">
 
       {/* POPULAR SCHEMES */}
 
-<section className="container py-5">
+      <section className="container py-5">
 
-  <Swiper
-    spaceBetween={30}
-    slidesPerView={1}
-    autoplay={{
-      delay: 5000,
-      disableOnInteraction: false,
-    }}
-    navigation={true}
-    pagination={{ clickable: true }}
-    modules={[Autoplay, Navigation, Pagination]}
-  >
-
-    {/* CARD 1 */}
-    <SwiperSlide>
-      <div className="card border-0 shadow-lg scheme-main-card">
-        <div className="row g-0 align-items-center">
-
-          <div className="col-md-6">
-            <img
-              src="https://images.unsplash.com/photo-1509099836639-18ba1795216d?q=80&w=1200"
-              className="img-fluid rounded-start scheme-big-image"
-              alt="Farmer Scheme"
-            />
+        {featuredLoading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary"></div>
           </div>
-
-          <div className="col-md-6 p-5">
-            <span className="badge bg-success mb-3">
-              Agriculture
-            </span>
-
-            <h2 className="fw-bold">
-              PM Kisan Samman Nidhi
-            </h2>
-
-            <p className="text-muted mt-3">
-              Financial support provided to eligible farmer families
-              across India for agricultural needs.
-            </p>
-
-            <button className="btn btn-primary mt-3 px-4">
-              Apply Now →
-            </button>
+        ) : featuredSchemes.length === 0 ? (
+          <div className="text-center text-muted py-5">
+            No schemes available right now.
           </div>
+        ) : (
+          <Swiper
+            spaceBetween={30}
+            slidesPerView={1}
+            autoplay={{
+              delay: 5000,
+              disableOnInteraction: false,
+            }}
+            navigation={true}
+            pagination={{ clickable: true }}
+            modules={[Autoplay, Navigation, Pagination]}
+          >
+            {featuredSchemes.map((scheme, index) => (
+              <SwiperSlide key={scheme.scheme_id}>
+                <div className="card border-0 shadow-lg scheme-main-card">
+                  <div className="row g-0 align-items-center">
 
-        </div>
-      </div>
-    </SwiperSlide>
+                    <div className="col-md-6">
+                      <img
+                        src={CAROUSEL_IMAGES[index % CAROUSEL_IMAGES.length]}
+                        className="img-fluid rounded-start scheme-big-image"
+                        alt={scheme.title}
+                      />
+                    </div>
 
-    {/* CARD 2 */}
-    <SwiperSlide>
-      <div className="card border-0 shadow-lg scheme-main-card">
-        <div className="row g-0 align-items-center">
+                    <div className="col-md-6 p-5">
+                      {scheme.category && (
+                        <span
+                          className={`badge ${CAROUSEL_BADGE_COLORS[index % CAROUSEL_BADGE_COLORS.length]} mb-3`}
+                        >
+                          {scheme.category}
+                        </span>
+                      )}
 
-          <div className="col-md-6">
-            <img
-              src="https://images.pexels.com/photos/1454360/pexels-photo-1454360.jpeg"
-              className="img-fluid rounded-start scheme-big-image"
-              alt="Education"
-            />
-          </div>
+                      <h2 className="fw-bold">{scheme.title}</h2>
 
-          <div className="col-md-6 p-5">
-            <span className="badge bg-primary mb-3">
-              Education
-            </span>
+                      <p className="text-muted mt-3">
+                        {buildTeaser(scheme.details) || "Details available on the scheme page."}
+                      </p>
 
-            <h2 className="fw-bold">
-              Post Matric Scholarship
-            </h2>
+                      <button
+                        className="btn btn-primary mt-3 px-4"
+                        onClick={() => navigate(`/schemes/${scheme.scheme_id}`)}
+                      >
+                        View Details →
+                      </button>
+                    </div>
 
-            <p className="text-muted mt-3">
-              Financial assistance for students belonging
-              to SC/ST/OBC categories.
-            </p>
+                  </div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
+      </section>
 
-            <button className="btn btn-primary mt-3 px-4">
-              Apply Now →
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </SwiperSlide>
-
-    {/* CARD 3 */}
-    <SwiperSlide>
-      <div className="card border-0 shadow-lg scheme-main-card">
-        <div className="row g-0 align-items-center">
-
-          <div className="col-md-6">
-            <img
-              src="https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?q=80&w=1200"
-              className="img-fluid rounded-start scheme-big-image"
-              alt="Health"
-            />
-          </div>
-
-          <div className="col-md-6 p-5">
-            <span className="badge bg-danger mb-3">
-              Health
-            </span>
-
-            <h2 className="fw-bold">
-              Ayushman Bharat Yojana
-            </h2>
-
-            <p className="text-muted mt-3">
-              Health insurance coverage up to ₹5 lakh
-              per family annually.
-            </p>
-
-            <button className="btn btn-primary mt-3 px-4">
-              Apply Now →
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </SwiperSlide>
-
-  </Swiper>
-</section>
       {/* FIND SCHEME SECTION */}
       <section className="find-section py-5">
         <div className="container">
@@ -173,7 +234,7 @@ export default function Home() {
         </div>
       </section>
 
-            {/* POPULAR CATEGORIES */}
+      {/* POPULAR CATEGORIES */}
       <section className="container py-5">
 
         <div className="text-center mb-5">
@@ -184,42 +245,39 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="row g-4">
+        {categoriesLoading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary"></div>
+          </div>
+        ) : categories.length === 0 ? (
+          <div className="text-center text-muted py-5">
+            No categories found yet.
+          </div>
+        ) : (
+          <div className="row g-4">
+            {categories.map((cat) => (
+              <div className="col-md-3" key={cat.category}>
+                <div
+                  className="category-card shadow-sm p-4 text-center h-100"
+                  role="button"
+                  onClick={() =>
+                    navigate(`/schemes?category=${encodeURIComponent(cat.category)}`)
+                  }
+                >
+                  <div className="category-icon mb-3">
+                    {getCategoryIcon(cat.category)}
+                  </div>
 
-          {[
-            ["🏦", "Banking & Finance", "82 Schemes"],
-            ["💼", "Business & Industry", "120 Schemes"],
-            ["🌾", "Agriculture & Farmers", "95 Schemes"],
-            ["🎓", "Education", "110 Schemes"],
-            ["❤️", "Health & Wellness", "68 Schemes"],
-            ["👩", "Women & Children", "76 Schemes"],
-            ["🏠", "Housing", "54 Schemes"],
-            ["🧑‍💼", "Employment", "88 Schemes"],
-            ["♿", "Disability", "42 Schemes"],
-            ["👴", "Senior Citizens", "35 Schemes"],
-            ["📚", "Skill Development", "61 Schemes"],
-            ["🚀", "Startups", "27 Schemes"]
-          ].map((item, index) => (
-            <div className="col-md-3" key={index}>
+                  <h5>{cat.category}</h5>
 
-              <div className="category-card shadow-sm p-4 text-center h-100">
-
-                <div className="category-icon mb-3">
-                  {item[0]}
+                  <p className="text-primary fw-semibold mt-2">
+                    {cat.scheme_count} {cat.scheme_count === 1 ? "Scheme" : "Schemes"}
+                  </p>
                 </div>
-
-                <h5>{item[1]}</h5>
-
-                <p className="text-primary fw-semibold mt-2">
-                  {item[2]}
-                </p>
-
               </div>
-
-            </div>
-          ))}
-
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* STATS */}
@@ -228,22 +286,28 @@ export default function Home() {
           <div className="row text-center">
 
             <div className="col-md-3">
-              <h2 className="fw-bold text-primary">1000+</h2>
+              <h2 className="fw-bold text-primary">
+                {statsLoading ? "…" : `${stats?.total_schemes ?? 0}+`}
+              </h2>
               <p>Schemes</p>
             </div>
 
+            {/* Not tracked in the schemes table - kept as a placeholder */}
             <div className="col-md-3">
               <h2 className="fw-bold text-primary">10M+</h2>
               <p>Users Benefited</p>
             </div>
 
+            {/* Not tracked in the schemes table - kept as a placeholder */}
             <div className="col-md-3">
               <h2 className="fw-bold text-primary">5M+</h2>
               <p>Applications</p>
             </div>
 
             <div className="col-md-3">
-              <h2 className="fw-bold text-primary">50+</h2>
+              <h2 className="fw-bold text-primary">
+                {statsLoading ? "…" : `${stats?.total_departments ?? 0}+`}
+              </h2>
               <p>Departments</p>
             </div>
 
