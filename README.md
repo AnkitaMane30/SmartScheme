@@ -68,7 +68,9 @@ SmartScheme follows a modular client-server architecture consisting of the follo
 The React.js frontend communicates with the Python Flask backend through REST APIs, while MySQL provides structured data storage.
 
 ## 🛠️ Technologies Used
-```text
+
+## 🛠️ Technologies Used
+
 | Component | Technologies |
 |---|---|
 | Frontend | React.js, HTML5, CSS3, JavaScript |
@@ -81,7 +83,7 @@ The React.js frontend communicates with the Python Flask backend through REST AP
 | API Communication | REST APIs |
 | Development Tools | Visual Studio Code, Git, GitHub |
 
-```
+
 
 ## 🔄 Working Flow
 
