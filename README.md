@@ -69,8 +69,6 @@ The React.js frontend communicates with the Python Flask backend through REST AP
 
 ## 🛠️ Technologies Used
 
-## 🛠️ Technologies Used
-
 | Component | Technologies |
 |---|---|
 | Frontend | React.js, HTML5, CSS3, JavaScript |
